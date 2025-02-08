@@ -208,7 +208,6 @@ OwnerApp.prototype.replaceBoatCardInUI = function (boat) {
         return;
     }
 
-    // ✅ Update only rental info & status to avoid losing action buttons
     const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
     const rentalExpiryElement = document.getElementById(`rental-expiry-${boatId}`);
 
@@ -426,28 +425,58 @@ OwnerApp.prototype.toggleBoatStatus = async function (boatId, setUnavailable) {
     }
 };
 
-OwnerApp.prototype.updateBoatStatusUI = function (boatId, setUnavailable) {
+OwnerApp.prototype.updateBoatStatusUI = async function (boatId) {
     const boatElement = document.querySelector(`[data-boat-id="${boatId}"]`);
     if (!boatElement) {
         console.warn(`⚠️ Boat element with ID '${boatId}' not found!`);
         return;
     }
 
-    const statusText = boatElement.querySelector(".boat-status span");
-    if (statusText) {
-        statusText.classList.remove("bg-success", "bg-secondary");
-        statusText.classList.add(setUnavailable ? "bg-secondary" : "bg-success");
-        statusText.innerText = setUnavailable ? "Unavailable" : "Available";
-    }
+    try {
+        const updatedBoat = await this.getBoat(boatId);
+        if (!updatedBoat) {
+            console.error(`❌ Failed to fetch updated boat details for ID ${boatId}`);
+            return;
+        }
 
-    const toggleButton = boatElement.querySelector(".toggle-status-btn");
-    if (toggleButton) {
-        toggleButton.innerText = setUnavailable ? "Set to Available" : "Set to Unavailable";
-        toggleButton.classList.remove("btn-warning", "btn-success");
-        toggleButton.classList.add(setUnavailable ? "btn-success" : "btn-warning");
-        toggleButton.setAttribute("onclick", `ownerApp.toggleBoatStatus(${boatId}, ${!setUnavailable})`);
+        const boatStatus = updatedBoat[7];  
+        const rentalEndTimestamp = updatedBoat[9];
+        const currentTime = Math.floor(Date.now() / 1000);
+        const isExpired = rentalEndTimestamp <= currentTime;
+
+        let newStatus = "Available";  
+        let statusColor = "success";
+
+        if (boatStatus === 1) {
+            newStatus = "Rented";
+            statusColor = "warning";
+        } else if (boatStatus === 2) {
+            newStatus = "Unavailable";
+            statusColor = "secondary";
+        }
+
+        // ✅ If rental expired, set to "Expired" and show finalize rental button
+        if (boatStatus === 1 && isExpired) {
+            newStatus = "Expired";
+            statusColor = "danger";
+            this.showFinalizeRentalControls(boatId);
+        }
+
+        // ✅ Update the UI status
+        const statusText = boatElement.querySelector(".boat-status span");
+        if (statusText) {
+            statusText.classList.remove("bg-success", "bg-warning", "bg-secondary", "bg-danger");
+            statusText.classList.add(`bg-${statusColor}`);
+            statusText.innerText = newStatus;
+        }
+
+        console.log(`✅ Updated Boat ${boatId} status: ${newStatus}`);
+
+    } catch (error) {
+        console.error(`❌ Error updating boat UI status for ID ${boatId}:`, error);
     }
 };
+
 
 OwnerApp.prototype.loadOwnerStats = async function () {
     await this.app.waitForContractInit();
