@@ -232,7 +232,7 @@ OwnerApp.prototype.updateRentalEndStatus = function (boatId, rentalEndTimestamp)
 
     if (isExpired) {
         rentalStatusElement.innerHTML = `${new Date(rentalEndTimestamp * 1000).toLocaleString()} <span class="text-danger fw-bold">(Expired)</span>`;
-        
+
         if (finalizeButtonContainer && !document.getElementById(`finalizeRentalButton-${boatId}`)) {
             finalizeButtonContainer.innerHTML += `
                 <button id="finalizeRentalButton-${boatId}" class="btn btn-primary w-100 mt-3" onclick="ownerApp.finalizeRental(${boatId})">
@@ -244,34 +244,69 @@ OwnerApp.prototype.updateRentalEndStatus = function (boatId, rentalEndTimestamp)
 };
 
 OwnerApp.prototype.startRentalStatusUpdate = function () {
-    setInterval(() => {
-        document.querySelectorAll("[data-boat-id]").forEach((boat) => {
-            const boatId = boat.getAttribute("data-boat-id");
-            const rentalEndTimestamp = parseInt(boat.getAttribute("data-rental-end"));
+    setInterval(async () => {
+        document.querySelectorAll("[data-boat-id]").forEach(async (boatElement) => {
+            const boatId = boatElement.getAttribute("data-boat-id");
+            const updatedBoat = await this.getBoat(boatId);
 
-            if (!rentalEndTimestamp) return;
+            if (updatedBoat && updatedBoat[7] === 1) { 
+                const currentTime = Math.floor(Date.now() / 1000);
+                const rentalEndTimestamp = updatedBoat[9];
 
-            const currentTime = Math.floor(Date.now() / 1000);
-            const isExpired = currentTime >= rentalEndTimestamp;
-
-            const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
-            const finalizeButton = document.getElementById(`finalizeRentalButton-${boatId}`);
-
-            if (rentalStatusElement) {
-                rentalStatusElement.innerHTML = `
-                    ${new Date(rentalEndTimestamp * 1000).toLocaleString()} 
-                    <span class="text-${isExpired ? "danger" : "success"} fw-bold">
-                        (${isExpired ? "Expired" : "Active"})
-                    </span>
-                `;
-            }
-
-            if (isExpired && finalizeButton) {
-                finalizeButton.style.display = "block";
+                if (rentalEndTimestamp <= currentTime) {
+                    console.log(`⏳ Rental for Boat ID ${boatId} has expired! Updating UI...`);
+                    await this.updateRentalEndStatus(boatId, rentalEndTimestamp);
+                }
             }
         });
-    }, 5000); 
+    }, 5000);
 };
+
+OwnerApp.prototype.updateRentalEndStatus = function (boatId, rentalEndTimestamp) {
+    const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
+    const finalizeButtonContainer = document.getElementById(`rentalControls-${boatId}`);
+
+    if (!rentalStatusElement) {
+        console.warn(`⚠️ Rental status element for Boat ${boatId} not found!`);
+        return;
+    }
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    const isExpired = currentTime >= rentalEndTimestamp;
+
+    if (isExpired) {
+        rentalStatusElement.innerHTML = `${new Date(rentalEndTimestamp * 1000).toLocaleString()} <span class="text-danger fw-bold">(Expired)</span>`;
+
+        if (finalizeButtonContainer && !document.getElementById(`finalizeRentalButton-${boatId}`)) {
+            finalizeButtonContainer.innerHTML += `
+                <button id="finalizeRentalButton-${boatId}" class="btn btn-primary w-100 mt-3" onclick="ownerApp.finalizeRental(${boatId})">
+                    Finalize Rental
+                </button>
+            `;
+        }
+    }
+};
+
+OwnerApp.prototype.getBoat = async function (boatId) {
+    await this.app.waitForContractInit();
+
+    try {
+        const contractWithSigner = this.app.contract.connect(this.app.web3Provider.getSigner());
+        const boat = await contractWithSigner.getBoat(boatId);
+        return boat;
+    } catch (error) {
+        console.error(`❌ Error fetching boat ${boatId}:`, error);
+        return null;
+    }
+};
+
+window.addEventListener("DOMContentLoaded", async () => {
+    await boatRentalApp.getAccounts();
+    ownerApp = new OwnerApp();
+    ownerApp.init();
+    ownerApp.startRentalStatusUpdate();
+});
+
 
 OwnerApp.prototype.toggleOtherReason = function (boatId) {
     const reasonDropdown = document.getElementById(`damageReason-${boatId}`);
