@@ -3,7 +3,7 @@ class BoatRentalApp {
         this.web3Provider = null;
         this.contract = null;
         this.account = null;
-        this.contractAddress = "0x51158dc2c6798e69f141dd0b2a2c1e3aff9d7e6f"; // Update with your deployed contract address
+        this.contractAddress = "0x94a794743dd2b984a9961f02b6fd9ce20b012536"; // Update with your deployed contract address
         this.contractABI = [
             "function boatCount() public view returns (uint256)",
             "function getBoat(uint256) public view returns (uint256, string, address, string, string, uint256, uint256, uint8, address, uint256, string)",
