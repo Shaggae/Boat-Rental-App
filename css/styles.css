@@ -1,0 +1,392 @@
+/* ============================== */
+/*          GENERAL STYLES        */
+/* ============================== */
+
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* ============================== */
+/*          NAVBAR STYLING        */
+/* ============================== */
+
+.navbar {
+    background-color: #007bff;
+    padding: 15px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+}
+
+.navbar a:hover {
+    background-color: #0056b3;
+    border-radius: 5px;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.navbar-nav .nav-link {
+    font-weight: 500;
+    padding: 10px 15px;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #fff;
+}
+
+.navbar .btn-primary {
+    font-weight: 600;
+}
+
+/* ============================== */
+/*          HERO SECTION          */
+/* ============================== */
+
+.hero {
+    position: relative;
+    height: 80vh;
+    background: url('../images/Boat-Rental-Image.jpeg') center/cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    padding: 20px;
+}
+
+.hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+.hero-content p {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.hero-content .btn {
+    font-size: 1.2rem;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+/* ============================== */
+/*       BOAT LISTING FIX         */
+/* ============================== */
+
+.boat-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    background: #fff;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    height: 100%; 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.boat-card img {
+    width: 100%;
+    height: 180px; 
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.boat-card .card-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.boat-card .card-text {
+    max-height: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.boat-card .d-grid {
+    margin-top: auto; 
+}
+
+.boat-card .btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    min-height: 40px; 
+}
+
+/* ============================== */
+/*         DASHBOARD STYLES       */
+/* ============================== */
+
+.dashboard-header {
+    background: linear-gradient(135deg, #1a2a4a, #3b5998); 
+    color: white;
+    padding: 50px 0;
+    text-align: center;
+}
+
+.stat-card {
+    border-radius: 12px;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    padding: 20px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.stat-card.bg-primary {
+    background: #1a73e8 !important; 
+}
+
+.stat-card.bg-warning {
+    background: #e6a700 !important; 
+}
+
+.stat-card.bg-success {
+    background: #198754 !important; 
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+/* ============================== */
+/*       WALLET BUTTON STYLE      */
+/* ============================== */
+
+.wallet-container {
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    margin: 20px auto; 
+}
+
+.wallet-card {
+    background: #3f464d; 
+    color: white;
+    border-radius: 50px; 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    border: none;
+    max-width: fit-content; 
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.wallet-card i {
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+
+.wallet-address {
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 500px; 
+}
+
+.wallet-card:hover {
+    background: #25282c;
+}
+
+.copy-tooltip {
+    position: absolute;
+    background: #343a40;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transform: translate(-50%, -10px);
+    transition: opacity 0.3s ease-in-out;
+    white-space: nowrap;
+}
+
+.copy-tooltip.show {
+    opacity: 1;
+}
+
+#copyWalletBtn {
+    display: none; 
+}
+
+@media (max-width: 768px) {
+    .wallet-card {
+        max-width: 100%;
+    }
+
+    .wallet-address {
+        max-width: 180px;
+    }
+}
+
+
+/* ============================== */
+/*          LOGIN STYLES          */
+/* ============================== */
+
+.login-card {
+    max-width: 400px;
+    width: 100%;
+    border-radius: 10px;
+    text-align: center;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================== */
+/*          FORM STYLING          */
+/* ============================== */
+
+.form-label {
+    font-weight: 600;
+}
+
+.form-control {
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px;
+    transition: all 0.2s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+}
+
+/* ============================== */
+/*         CONTACT FORM           */
+/* ============================== */
+
+.card {
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.contact-info {
+    margin-top: 40px;
+}
+
+.contact-info i {
+    font-size: 30px;
+    color: #007bff;
+}
+
+.contact-info p {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* ============================== */
+/*           FOOTER               */
+/* ============================== */
+
+footer {
+    background: #343a40;
+    color: white;
+    font-size: 15px;
+    text-align: center;
+    padding: 15px;
+}
+
+/* ============================== */
+/*     RESPONSIVE DESIGN FIXES    */
+/* ============================== */
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 60px 0;
+    }
+
+    .contact-info {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .login-card {
+        width: 90%;
+    }
+
+    .wallet-card {
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    #copyWalletBtn {
+        margin-top: 5px;
+    }
+}
+
+/* ============================== */
+/*         BUTTON STYLING         */
+/* ============================== */
+
+.btn-primary {
+    background: #1a73e8; 
+    border: none;
+    padding: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-warning {
+    background-color: #e6a700; 
+    color: #fff !important;
+    border: none;
+}
+
+.btn-warning:hover {
+    background-color: #e6a700 !important; 
+    color: #fff !important;
+}
+.btn-primary:hover {
+    background: #1664c0;
+}
+
+/* ============================== */
+/*        GOOGLE REVIEWS FIX      */
+/* ============================== */
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    filter: brightness(0.5); 
+}
+
+.carousel-control-prev:hover .carousel-control-prev-icon,
+.carousel-control-next:hover .carousel-control-next-icon {
+    filter: brightness(0.3); 
+}

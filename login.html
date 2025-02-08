@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Boat Rental System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <div id="navbar-placeholder"></div>
+
+    <!-- Login Section -->
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="card shadow-lg p-4 border-0 login-card">
+            <div class="text-center">
+                <i class="bi bi-wallet2 text-primary display-4"></i>
+                <h2 class="fw-bold mt-3">Login</h2>
+                <p class="text-muted">Connect your wallet to access your account.</p>
+            </div>
+            <button class="btn btn-primary w-100 fw-semibold" id="connectWallet">
+                <i class="bi bi-box-arrow-in-right"></i> Connect Wallet
+            </button>
+            <p class="text-center mt-3 text-muted" id="walletStatus">Not connected</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script>
+        const ownerWallet = "0x8274DFd24409A19D2A10d249B9413953bf431DC7"; // ✅ Replace with actual Owner wallet address
+        const customerWallet = "0xAcEe3f8a0e0D36B652c81Bf74c6Cd71842cB7d00"; // ✅ Replace with actual Customer wallet address
+        let userAddress = "";
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    await provider.send("eth_requestAccounts", []);
+                    
+                    const accounts = await provider.send("eth_accounts", []);
+                    if (!accounts || accounts.length === 0) {
+                        throw new Error("No accounts found");
+                    }
+                    
+                    userAddress = accounts[0];
+                    document.getElementById("walletStatus").innerText = `Connected: ${userAddress}`;
+                    localStorage.setItem("walletAddress", userAddress);
+                    
+                    redirectUser();
+                    
+                } catch (error) {
+                    console.error("Wallet connection failed", error);
+                    alert("Failed to connect wallet.");
+                }
+            } else {
+                alert("Please install MetaMask to use this feature.");
+            }
+        }
+
+        function redirectUser() {
+            if (!userAddress) return;
+            
+            if (userAddress.toLowerCase() === ownerWallet.toLowerCase()) {
+                window.location.href = "owner.html";
+            } else if (userAddress.toLowerCase() === customerWallet.toLowerCase()) {
+                window.location.href = "customer.html";
+            } else {
+                alert("Unrecognized wallet address. Please use a registered Owner or Customer wallet.");
+                localStorage.removeItem("walletAddress");
+                document.getElementById("walletStatus").innerText = "Not connected";
+            }
+        }
+
+        document.getElementById("connectWallet").addEventListener("click", connectWallet);
+
+        if (window.ethereum) {
+            window.ethereum.on("accountsChanged", async (accounts) => {
+                if (accounts.length > 0) {
+                    userAddress = accounts[0];
+                    document.getElementById("walletStatus").innerText = `Connected: ${userAddress}`;
+                    localStorage.setItem("walletAddress", userAddress);
+                    redirectUser();
+                } else {
+                    localStorage.removeItem("walletAddress");
+                    document.getElementById("walletStatus").innerText = "Not connected";
+                }
+            });
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/loadComponents.js"></script>
+</body>
+</html>
