@@ -44,7 +44,9 @@ CustomerApp.prototype.rentBoat = async function (boatId, rentalPricePerSecond, d
 
         this.app.showLoadingModal("success", "Boat rented successfully!");
 
-        await this.updateBoatStatusUI(boatId);
+        document.getElementById("loadingCloseButton").addEventListener("click", function () {
+            customerApp.updateBoatStatusUI(boatId);
+        }, { once: true });
 
     } catch (error) {
         console.error("❌ Error renting boat:", error);

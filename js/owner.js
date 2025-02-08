@@ -208,19 +208,9 @@ OwnerApp.prototype.replaceBoatCardInUI = function (boat) {
         return;
     }
 
-    const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
-    const rentalExpiryElement = document.getElementById(`rental-expiry-${boatId}`);
+    const newBoatCard = this.createBoatCard(boat);
 
-    if (rentalStatusElement) {
-        rentalStatusElement.innerText = new Date(boat[9] * 1000).toLocaleString();
-    }
-
-    if (rentalExpiryElement) {
-        const isActive = boat[9] > Math.floor(Date.now() / 1000);
-        rentalExpiryElement.innerText = `(${isActive ? "Active" : "Expired"})`;
-        rentalExpiryElement.classList.remove("text-success", "text-danger");
-        rentalExpiryElement.classList.add(isActive ? "text-success" : "text-danger");
-    }
+    boatElement.replaceWith(newBoatCard);
 
     console.log(`✅ Boat ${boatId} updated in UI.`);
 };
@@ -231,14 +221,13 @@ OwnerApp.prototype.startRentalStatusUpdate = function () {
             const boatId = boatElement.getAttribute("data-boat-id");
             const updatedBoat = await this.getBoat(boatId);
 
-            if (updatedBoat && updatedBoat[7] === 1) { // Only check if rented
+            if (updatedBoat && updatedBoat[7] === 1) { 
                 const currentTime = Math.floor(Date.now() / 1000);
                 const rentalEndTimestamp = updatedBoat[9];
 
                 if (rentalEndTimestamp <= currentTime) {
                     console.log(`⏳ Rental for Boat ID ${boatId} has expired! Updating UI...`);
 
-                    // ✅ Update the "Rental Ends:" text and status dynamically
                     const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
                     const rentalExpiryElement = document.getElementById(`rental-expiry-${boatId}`);
 
@@ -258,7 +247,6 @@ OwnerApp.prototype.startRentalStatusUpdate = function () {
         });
     }, 5000);
 };
-
 
 OwnerApp.prototype.updateRentalEndStatus = function (boatId, rentalEndTimestamp) {
     const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
@@ -304,7 +292,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     ownerApp.init();
     ownerApp.startRentalStatusUpdate();
 });
-
 
 OwnerApp.prototype.toggleOtherReason = function (boatId) {
     const reasonDropdown = document.getElementById(`damageReason-${boatId}`);
@@ -418,7 +405,6 @@ OwnerApp.prototype.updateBoatStatusUI = async function (boatId) {
         const currentTime = Math.floor(Date.now() / 1000);
         const isExpired = rentalEndTimestamp <= currentTime;
 
-        // ✅ If rental expired, show finalize rental button but DO NOT update the status badge
         if (boatStatus === 1 && isExpired) {
             this.showFinalizeRentalControls(boatId);
         }
@@ -571,7 +557,7 @@ OwnerApp.prototype.createBoatCard = function (boat) {
     const boatCard = document.createElement("div");
     boatCard.classList.add("col-lg-4", "col-md-6", "col-sm-12");
     boatCard.setAttribute("data-boat-id", boatId);
-    boatCard.setAttribute("data-rental-end", rentalEndTimestamp); // ✅ Store rental end timestamp for updates
+    boatCard.setAttribute("data-rental-end", rentalEndTimestamp);  
 
     boatCard.innerHTML = `
         <div class="card boat-card shadow-lg h-100 d-flex flex-column">
@@ -590,7 +576,6 @@ OwnerApp.prototype.createBoatCard = function (boat) {
         </div>
     `;
 
-    // ✅ If the rental is expired, call showFinalizeRentalControls()
     if (isExpired) {
         setTimeout(() => {
             ownerApp.showFinalizeRentalControls(boatId);
@@ -604,14 +589,14 @@ OwnerApp.prototype.showFinalizeRentalControls = function (boatId) {
     const rentalControlsContainer = document.getElementById(`rentalControls-${boatId}`);
     if (!rentalControlsContainer) return;
 
-    // ✅ Check if dropdown already exists
     if (!document.getElementById(`depositAction-${boatId}`)) {
         rentalControlsContainer.innerHTML = `
-            <select id="depositAction-${boatId}" class="form-select mb-2" onchange="ownerApp.showDamageReasonDropdown(${boatId})">
-                <option value="true">Refund Deposit</option>
-                <option value="false">Keep Deposit</option>
-            </select>
-
+            <div class="mt-4">
+                <select id="depositAction-${boatId}" class="form-select mb-2" onchange="ownerApp.showDamageReasonDropdown(${boatId})">
+                    <option value="true">Refund Deposit</option>
+                    <option value="false">Keep Deposit</option>
+                </select>
+            </div>
             <div id="damageReasonContainer-${boatId}" style="display: none;">
                 <label for="damageReason-${boatId}" class="form-label">Select Reason:</label>
                 <select id="damageReason-${boatId}" class="form-select" onchange="ownerApp.toggleOtherReason(${boatId})">
