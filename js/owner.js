@@ -444,36 +444,15 @@ OwnerApp.prototype.updateBoatStatusUI = async function (boatId) {
         const currentTime = Math.floor(Date.now() / 1000);
         const isExpired = rentalEndTimestamp <= currentTime;
 
-        let newStatus = "Available";  
-        let statusColor = "success";
-
-        if (boatStatus === 1) {
-            newStatus = "Rented";
-            statusColor = "warning";
-        } else if (boatStatus === 2) {
-            newStatus = "Unavailable";
-            statusColor = "secondary";
-        }
-
-        // ✅ If rental expired, set to "Expired" and show finalize rental button
+        // ✅ If rental expired, show finalize rental button but DO NOT update the status badge
         if (boatStatus === 1 && isExpired) {
-            newStatus = "Expired";
-            statusColor = "danger";
             this.showFinalizeRentalControls(boatId);
         }
 
-        // ✅ Update the UI status
-        const statusText = boatElement.querySelector(".boat-status span");
-        if (statusText) {
-            statusText.classList.remove("bg-success", "bg-warning", "bg-secondary", "bg-danger");
-            statusText.classList.add(`bg-${statusColor}`);
-            statusText.innerText = newStatus;
-        }
-
-        console.log(`✅ Updated Boat ${boatId} status: ${newStatus}`);
+        console.log(`✅ Boat ${boatId} checked. Expired: ${isExpired}`);
 
     } catch (error) {
-        console.error(`❌ Error updating boat UI status for ID ${boatId}:`, error);
+        console.error(`❌ Error updating boat UI for ID ${boatId}:`, error);
     }
 };
 
@@ -585,54 +564,23 @@ OwnerApp.prototype.createBoatCard = function (boat) {
     const depositAmount = ethers.utils.formatEther(boat[6]);
     const boatId = boat[0];
     const currentTime = Math.floor(Date.now() / 1000);
-    const isActive = rentalEndTimestamp > currentTime;
+    const isExpired = rentalEndTimestamp <= currentTime;
 
     let rentalInfo = "";
-    let collectButton = "";
 
     if (boatStatus === "Rented") {
         rentalInfo = `
             <div class="rental-info-group">
                 <p class="fw-bold text-dark mb-0">Rental Ends:</p>
                 <p id="rental-status-${boatId}" class="fw-bold text-dark mb-0">${new Date(rentalEndTimestamp * 1000).toLocaleString()}</p>
-                <span id="rental-expiry-${boatId}" class="fw-bold mt-1 text-${isActive ? "success" : "danger"}">
-                    (${isActive ? "Active" : "Expired"})
+                <span id="rental-expiry-${boatId}" class="fw-bold mt-1 text-${isExpired ? "danger" : "success"}">
+                    (${isExpired ? "Expired" : "Active"})
                 </span>
             </div>
+            <div id="rentalControls-${boatId}"></div>  <!-- ✅ Placeholder for finalize rental controls -->
         `;
-
-        if (!isActive) {
-            collectButton = `
-                <div id="rentalControls-${boatId}" style="display: block;">
-                    <select id="depositAction-${boatId}" class="form-select mb-2">
-                        <option value="true">Refund Deposit</option>
-                        <option value="false">Keep Deposit</option>
-                    </select>
-
-                    <div id="damageReasonContainer-${boatId}" style="display: none;">
-                        <label for="damageReason-${boatId}" class="form-label">Select Reason:</label>
-                        <select id="damageReason-${boatId}" class="form-select" onchange="ownerApp.toggleOtherReason(${boatId})">
-                            <option value="Late return">Late return</option>
-                            <option value="Boat damage">Boat damage</option>
-                            <option value="Equipment missing">Equipment missing</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div id="otherDamageReasonContainer-${boatId}" style="display: none;">
-                        <label for="otherDamageReason-${boatId}" class="form-label">Specify Reason:</label>
-                        <input type="text" id="otherDamageReason-${boatId}" class="form-control" placeholder="Enter reason">
-                    </div>
-
-                    <button class="btn btn-primary w-100 mt-3" id="finalizeRentalButton-${boatId}" onclick="ownerApp.finalizeRental(${boatId})">
-                        Collect Rental Fees
-                    </button>
-                </div>
-            `;
-        }
     }
 
-    // ✅ Preserve action buttons separately
     let actionButtons = "";
     if (boatStatus === "Available") {
         actionButtons = `
@@ -649,6 +597,7 @@ OwnerApp.prototype.createBoatCard = function (boat) {
     const boatCard = document.createElement("div");
     boatCard.classList.add("col-lg-4", "col-md-6", "col-sm-12");
     boatCard.setAttribute("data-boat-id", boatId);
+    boatCard.setAttribute("data-rental-end", rentalEndTimestamp); // ✅ Store rental end timestamp for updates
 
     boatCard.innerHTML = `
         <div class="card boat-card shadow-lg h-100 d-flex flex-column">
@@ -662,13 +611,57 @@ OwnerApp.prototype.createBoatCard = function (boat) {
                 <p><strong>Deposit:</strong> ${depositAmount} ETH</p>
                 <p class="boat-status"><span class="badge bg-${statusColor}">${boatStatus}</span></p>
                 ${rentalInfo}
-                <div class="d-grid gap-2">${collectButton}</div>
                 <div class="d-grid gap-2" id="action-buttons-${boatId}">${actionButtons}</div> 
             </div>
         </div>
     `;
 
+    // ✅ If the rental is expired, call showFinalizeRentalControls()
+    if (isExpired) {
+        setTimeout(() => {
+            ownerApp.showFinalizeRentalControls(boatId);
+        }, 100);
+    }
+
     return boatCard;
+};
+
+OwnerApp.prototype.showFinalizeRentalControls = function (boatId) {
+    console.log(`🔄 Updating finalize rental controls for Boat ID: ${boatId}`);
+
+    const rentalControlsContainer = document.getElementById(`rentalControls-${boatId}`);
+    if (!rentalControlsContainer) {
+        console.warn(`⚠️ Rental controls container for Boat ID ${boatId} not found!`);
+        return;
+    }
+
+    rentalControlsContainer.innerHTML = `
+        <select id="depositAction-${boatId}" class="form-select mb-2">
+            <option value="true">Refund Deposit</option>
+            <option value="false">Keep Deposit</option>
+        </select>
+
+        <div id="damageReasonContainer-${boatId}" style="display: none;">
+            <label for="damageReason-${boatId}" class="form-label">Select Reason:</label>
+            <select id="damageReason-${boatId}" class="form-select" onchange="ownerApp.toggleOtherReason(${boatId})">
+                <option value="Late return">Late return</option>
+                <option value="Boat damage">Boat damage</option>
+                <option value="Equipment missing">Equipment missing</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div id="otherDamageReasonContainer-${boatId}" style="display: none;">
+            <label for="otherDamageReason-${boatId}" class="form-label">Specify Reason:</label>
+            <input type="text" id="otherDamageReason-${boatId}" class="form-control" placeholder="Enter reason">
+        </div>
+
+        <button class="btn btn-primary w-100 mt-3" id="finalizeRentalButton-${boatId}" onclick="ownerApp.finalizeRental(${boatId})">
+            Collect Rental Fees
+        </button>
+    `;
+
+    console.log(`✅ Finalize rental controls updated for Boat ID: ${boatId}`);
 };
 
 
