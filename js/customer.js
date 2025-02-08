@@ -150,9 +150,15 @@ CustomerApp.prototype.createBoatCard = function (boat) {
     const boatStatus = statusMap[boat[7]];
     const statusColor = statusColors[boat[7]];
     const boatImageUrl = `https://ipfs.io/ipfs/${boat[10]}`;
-    const pricePerSecond = ethers.utils.formatEther(boat[5]);
-    const depositAmount = ethers.utils.formatEther(boat[6]);
     const boatId = boat[0];
+
+    const pricePerSecond = ethers.BigNumber.isBigNumber(boat[5]) 
+        ? ethers.utils.formatEther(boat[5].toString()) 
+        : ethers.utils.formatEther(boat[5]);
+
+    const depositAmount = ethers.BigNumber.isBigNumber(boat[6]) 
+        ? ethers.utils.formatEther(boat[6].toString()) 
+        : ethers.utils.formatEther(boat[6]);
 
     const currentTime = Math.floor(Date.now() / 1000);
     const rentalEndTime = boat[9] > 0 ? new Date(boat[9] * 1000).toLocaleString() : "N/A";
@@ -173,9 +179,15 @@ CustomerApp.prototype.createBoatCard = function (boat) {
         ? `
             <div class="rent-controls">
                 <label for="rentalDuration-${boatId}" class="form-label">Rental Duration (seconds):</label>
-                <input type="number" id="rentalDuration-${boatId}" min="1" placeholder="Enter rental time" class="form-control mb-2" oninput="updateTotalPrice(${boatId}, ${pricePerSecond}, ${depositAmount})">
+                <input type="number" id="rentalDuration-${boatId}" min="1" placeholder="Enter rental time" class="form-control mb-2" 
+                       oninput="updateTotalPrice(${boatId}, ${pricePerSecond}, ${depositAmount})">
                 <p id="totalPrice-${boatId}" class="text-muted"><strong>Total:</strong> 0 ETH</p>
-                <button class="btn btn-primary w-100 rent-btn" data-boatid="${boatId}" data-rentalprice="${pricePerSecond}" data-deposit="${depositAmount}">Rent</button>
+                <button class="btn btn-primary w-100 rent-btn" 
+                        data-boatid="${boatId}" 
+                        data-rentalprice="${pricePerSecond}" 
+                        data-deposit="${depositAmount}">
+                        Rent
+                </button>
             </div>
           `
         : rentalInfo;
@@ -195,7 +207,7 @@ CustomerApp.prototype.createBoatCard = function (boat) {
                     <p class="card-text text-muted">${boat[4]}</p>
                     <p><strong>Price:</strong> ${pricePerSecond} ETH/sec</p>
                     <p><strong>Deposit:</strong> ${depositAmount} ETH</p>
-                    <p><strong>Owner:</strong> ${boat[2].substring(0, 6)}...${boat[2].slice(-4)}</p>
+                    <p><strong>Owner:</strong> ${boat[2]}</p>
                     <p class="boat-status"><span class="badge bg-${statusColor}">${boatStatus}</span></p>
                 </div>
                 ${rentSection}
@@ -205,6 +217,7 @@ CustomerApp.prototype.createBoatCard = function (boat) {
 
     return boatCard;
 };
+
 
 CustomerApp.prototype.startRentalStatusUpdate = function () {
     setInterval(async () => {

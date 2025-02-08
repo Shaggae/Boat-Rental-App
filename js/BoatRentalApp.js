@@ -3,7 +3,7 @@ class BoatRentalApp {
         this.web3Provider = null;
         this.contract = null;
         this.account = null;
-        this.contractAddress = "0x94a794743dd2b984a9961f02b6fd9ce20b012536"; // Update with your deployed contract address
+        this.contractAddress = "0x94a794743dd2b984a9961f02b6fd9ce20b012536"; // Ensure this is correct
         this.contractABI = [
             "function boatCount() public view returns (uint256)",
             "function getBoat(uint256) public view returns (uint256, string, address, string, string, uint256, uint256, uint8, address, uint256, string)",
@@ -21,8 +21,8 @@ class BoatRentalApp {
             
             if (requireWallet) {
                 await this.getAccounts(); 
-                this.setupWalletCopyFeature();
                 this.contract = new ethers.Contract(this.contractAddress, this.contractABI, this.web3Provider.getSigner());
+                this.setupWalletCopyFeature();
             } else {
                 this.contract = new ethers.Contract(this.contractAddress, this.contractABI, this.web3Provider);
             }
@@ -33,44 +33,66 @@ class BoatRentalApp {
     
     async getAccounts() {
         try {
-            const accounts = await this.web3Provider.send("eth_requestAccounts", []);
-            if (accounts.length === 0) {
-                console.warn("⚠️ No wallet accounts found!");
+            if (!this.web3Provider) {
+                console.error("❌ Web3 provider not initialized!");
+                alert("Please connect your wallet first.");
                 return;
             }
-    
+
+            const accounts = await this.web3Provider.send("eth_requestAccounts", []);
+
+            if (accounts.length === 0) {
+                console.warn("⚠️ No wallet accounts found!");
+                alert("No wallet connected. Please connect your MetaMask.");
+                return;
+            }
+
+            this.account = accounts[0]; // ✅ Store wallet address in class
+
             const walletAddressElement = document.getElementById("walletAddress");
             if (walletAddressElement) {
-                walletAddressElement.setAttribute("data-full-address", accounts[0]); 
-                walletAddressElement.innerText = accounts[0]; 
-                console.log("✅ Wallet connected:", accounts[0]);
+                walletAddressElement.setAttribute("data-full-address", this.account); 
+                walletAddressElement.innerText = this.account; 
+                console.log("✅ Wallet connected:", this.account);
             }
+
+            // Ensure contract is initialized with signer
+            this.contract = new ethers.Contract(this.contractAddress, this.contractABI, this.web3Provider.getSigner());
         } catch (error) {
             console.error("❌ Error fetching accounts:", error);
         }
+    }
+
+    async ensureWalletConnected() {
+        if (!this.account) {
+            console.error("❌ Wallet is not connected.");
+            alert("Please connect your wallet before proceeding.");
+            return false;
+        }
+        return true;
     }
 
     setupWalletCopyFeature() {
         console.log("🔍 setupWalletCopyFeature() called!");
         const walletCard = document.getElementById("walletCard");
         const walletAddressElement = document.getElementById("walletAddress");
-    
+
         if (!walletCard || !walletAddressElement) {
             console.warn("⚠️ Wallet copy elements not found!");
             return;
         }
-    
+
         walletCard.style.cursor = "pointer";
         walletCard.setAttribute("title", "Click to copy");
-    
+
         walletCard.addEventListener("click", async () => {
             const fullAddress = walletAddressElement.getAttribute("data-full-address");
-    
+
             if (!fullAddress || fullAddress.length < 10) {
                 console.warn("⚠️ No wallet address available to copy!");
                 return;
             }
-    
+
             try {
                 await navigator.clipboard.writeText(fullAddress);
                 console.log("✅ Wallet address copied:", fullAddress);
@@ -87,7 +109,7 @@ class BoatRentalApp {
                 const rect = walletCard.getBoundingClientRect();
                 tooltip.style.left = `${rect.left + rect.width / 2}px`;
                 tooltip.style.top = `${rect.top - 30}px`;
-    
+
                 tooltip.classList.add("show");
 
                 setTimeout(() => {
@@ -120,27 +142,27 @@ class BoatRentalApp {
     
     showLoadingModal(status, message) {
         const modalElement = document.getElementById("loadingModal");
-    
+
         if (!modalElement) {
             console.error("❌ Error: Loading modal not found in DOM.");
             return;
         }
-    
+
         document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
-    
+
         const modal = new bootstrap.Modal(modalElement, {
             backdrop: "static",
             keyboard: false
         });
-    
+
         const statusIcon = document.getElementById("loadingStatusIcon");
         const statusText = document.getElementById("loadingStatusText");
         const closeButton = document.getElementById("loadingCloseButton");
-    
+
         closeButton.style.display = "none";
         closeButton.removeEventListener("click", boatRentalApp.closeLoadingModal);
         closeButton.addEventListener("click", () => boatRentalApp.closeLoadingModal());
-    
+
         if (status === "loading") {
             statusIcon.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
             statusText.innerText = message || "Processing...";
@@ -153,7 +175,7 @@ class BoatRentalApp {
             statusText.innerText = message || "Operation failed.";
             closeButton.style.display = "block";
         }
-    
+
         modal.show();
     }    
 
@@ -163,15 +185,21 @@ class BoatRentalApp {
         if (modal) {
             modal.hide();
         }
-    
+
         document.body.style.overflow = "auto";
         document.documentElement.style.overflow = "auto";
-    
+
         setTimeout(() => {
             document.body.classList.remove("modal-open");
         }, 300); 
     }    
 }
 
+// ✅ Ensure wallet is connected on page load
 const boatRentalApp = new BoatRentalApp();
-window.addEventListener("DOMContentLoaded", () => boatRentalApp.init());
+window.addEventListener("DOMContentLoaded", async () => {
+    await boatRentalApp.init(true);
+    if (!boatRentalApp.account) {
+        console.warn("⚠️ No wallet detected on load. Please connect manually.");
+    }
+});

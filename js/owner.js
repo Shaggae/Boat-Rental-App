@@ -492,12 +492,21 @@ OwnerApp.prototype.createBoatCard = function (boat) {
     const statusColor = statusColors[boat[7]];
     const rentalEndTimestamp = boat[9];
     const boatImageUrl = `https://ipfs.io/ipfs/${boat[10]}`;
-    const pricePerSecond = ethers.utils.formatEther(boat[5]);
-    const depositAmount = ethers.utils.formatEther(boat[6]);
+
+    const pricePerSecond = ethers.BigNumber.isBigNumber(boat[5]) 
+        ? ethers.utils.formatEther(boat[5].toString()) 
+        : ethers.utils.formatEther(boat[5]);
+
+    const depositAmount = ethers.BigNumber.isBigNumber(boat[6]) 
+        ? ethers.utils.formatEther(boat[6].toString()) 
+        : ethers.utils.formatEther(boat[6]);
+
     const boatId = boat[0];
     const currentTime = Math.floor(Date.now() / 1000);
     const rentalDuration = rentalEndTimestamp > currentTime ? rentalEndTimestamp - currentTime : 0;
-    const rentalAmount = ethers.utils.formatEther(boat[5] * rentalDuration);
+    const rentalAmount = ethers.utils.formatEther(
+        ethers.BigNumber.from(boat[5]).mul(rentalDuration).toString()
+    );
 
     let rentalInfo = "";
     let collectButton = "";
@@ -516,7 +525,7 @@ OwnerApp.prototype.createBoatCard = function (boat) {
         if (rentalExpired) {
             collectButton = `
                 <div id="rentalControls-${boatId}" style="display: block;">
-                    <select id="depositAction-${boatId}" class="form-select mb-2")">
+                    <select id="depositAction-${boatId}" class="form-select mb-2">
                         <option value="true">Refund Deposit</option>
                         <option value="false">Keep Deposit</option>
                     </select>
@@ -536,10 +545,6 @@ OwnerApp.prototype.createBoatCard = function (boat) {
                         <input type="text" id="otherDamageReason-${boatId}" class="form-control" placeholder="Enter reason">
                     </div>
 
-                    <p id="totalEarnings-${boatId}" class="fw-bold text-dark mt-2">
-                        Total Earnings: <span class="text-primary">${rentalAmount} ETH</span>
-                    </p>
-
                     <button class="btn btn-primary w-100 mt-3" id="finalizeRentalButton-${boatId}" onclick="ownerApp.finalizeRental(${boatId})">
                         Collect Rental Fees
                     </button>
@@ -547,7 +552,7 @@ OwnerApp.prototype.createBoatCard = function (boat) {
             `;
         }
     }
-    
+
     let actionButtons = "";
     if (boatStatus === "Available") {
         actionButtons = `
@@ -585,6 +590,7 @@ OwnerApp.prototype.createBoatCard = function (boat) {
 
     return boatCard;
 };
+
 
 window.addEventListener("DOMContentLoaded", async () => {
     await boatRentalApp.getAccounts();
