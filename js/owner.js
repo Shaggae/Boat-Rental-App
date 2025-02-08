@@ -225,32 +225,6 @@ OwnerApp.prototype.replaceBoatCardInUI = function (boat) {
     console.log(`✅ Boat ${boatId} updated in UI.`);
 };
 
-
-OwnerApp.prototype.updateRentalEndStatus = function (boatId, rentalEndTimestamp) {
-    const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
-    const finalizeButtonContainer = document.getElementById(`rentalControls-${boatId}`);
-
-    if (!rentalStatusElement) {
-        console.warn(`⚠️ Rental status element for Boat ${boatId} not found!`);
-        return;
-    }
-
-    const currentTime = Math.floor(Date.now() / 1000);
-    const isExpired = currentTime >= rentalEndTimestamp;
-
-    if (isExpired) {
-        rentalStatusElement.innerHTML = `${new Date(rentalEndTimestamp * 1000).toLocaleString()} <span class="text-danger fw-bold">(Expired)</span>`;
-
-        if (finalizeButtonContainer && !document.getElementById(`finalizeRentalButton-${boatId}`)) {
-            finalizeButtonContainer.innerHTML += `
-                <button id="finalizeRentalButton-${boatId}" class="btn btn-primary w-100 mt-3" onclick="ownerApp.finalizeRental(${boatId})">
-                    Finalize Rental
-                </button>
-            `;
-        }
-    }
-};
-
 OwnerApp.prototype.startRentalStatusUpdate = function () {
     setInterval(async () => {
         document.querySelectorAll("[data-boat-id]").forEach(async (boatElement) => {
@@ -627,41 +601,37 @@ OwnerApp.prototype.createBoatCard = function (boat) {
 };
 
 OwnerApp.prototype.showFinalizeRentalControls = function (boatId) {
-    console.log(`🔄 Updating finalize rental controls for Boat ID: ${boatId}`);
-
     const rentalControlsContainer = document.getElementById(`rentalControls-${boatId}`);
-    if (!rentalControlsContainer) {
-        console.warn(`⚠️ Rental controls container for Boat ID ${boatId} not found!`);
-        return;
-    }
+    if (!rentalControlsContainer) return;
 
-    rentalControlsContainer.innerHTML = `
-        <select id="depositAction-${boatId}" class="form-select mb-2">
-            <option value="true">Refund Deposit</option>
-            <option value="false">Keep Deposit</option>
-        </select>
-
-        <div id="damageReasonContainer-${boatId}" style="display: none;">
-            <label for="damageReason-${boatId}" class="form-label">Select Reason:</label>
-            <select id="damageReason-${boatId}" class="form-select" onchange="ownerApp.toggleOtherReason(${boatId})">
-                <option value="Late return">Late return</option>
-                <option value="Boat damage">Boat damage</option>
-                <option value="Equipment missing">Equipment missing</option>
-                <option value="Other">Other</option>
+    // ✅ Check if dropdown already exists
+    if (!document.getElementById(`depositAction-${boatId}`)) {
+        rentalControlsContainer.innerHTML = `
+            <select id="depositAction-${boatId}" class="form-select mb-2" onchange="ownerApp.showDamageReasonDropdown(${boatId})">
+                <option value="true">Refund Deposit</option>
+                <option value="false">Keep Deposit</option>
             </select>
-        </div>
 
-        <div id="otherDamageReasonContainer-${boatId}" style="display: none;">
-            <label for="otherDamageReason-${boatId}" class="form-label">Specify Reason:</label>
-            <input type="text" id="otherDamageReason-${boatId}" class="form-control" placeholder="Enter reason">
-        </div>
+            <div id="damageReasonContainer-${boatId}" style="display: none;">
+                <label for="damageReason-${boatId}" class="form-label">Select Reason:</label>
+                <select id="damageReason-${boatId}" class="form-select" onchange="ownerApp.toggleOtherReason(${boatId})">
+                    <option value="Late return">Late return</option>
+                    <option value="Boat damage">Boat damage</option>
+                    <option value="Equipment missing">Equipment missing</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
 
-        <button class="btn btn-primary w-100 mt-3" id="finalizeRentalButton-${boatId}" onclick="ownerApp.finalizeRental(${boatId})">
-            Collect Rental Fees
-        </button>
-    `;
+            <div id="otherDamageReasonContainer-${boatId}" style="display: none;">
+                <label for="otherDamageReason-${boatId}" class="form-label">Specify Reason:</label>
+                <input type="text" id="otherDamageReason-${boatId}" class="form-control" placeholder="Enter reason">
+            </div>
 
-    console.log(`✅ Finalize rental controls updated for Boat ID: ${boatId}`);
+            <button class="btn btn-primary w-100 mt-3" id="finalizeRentalButton-${boatId}" onclick="ownerApp.finalizeRental(${boatId})">
+                Collect Rental Fees
+            </button>
+        `;
+    }
 };
 
 
