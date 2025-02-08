@@ -208,15 +208,24 @@ OwnerApp.prototype.replaceBoatCardInUI = function (boat) {
         return;
     }
 
-    boatElement.innerHTML = this.createBoatCard(boat).innerHTML;
+    // ✅ Update only rental info & status to avoid losing action buttons
+    const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
+    const rentalExpiryElement = document.getElementById(`rental-expiry-${boatId}`);
 
-    const depositAction = document.getElementById(`depositAction-${boatId}`);
-    if (depositAction) {
-        depositAction.addEventListener("change", () => this.showDamageReasonDropdown(boatId));
+    if (rentalStatusElement) {
+        rentalStatusElement.innerText = new Date(boat[9] * 1000).toLocaleString();
+    }
+
+    if (rentalExpiryElement) {
+        const isActive = boat[9] > Math.floor(Date.now() / 1000);
+        rentalExpiryElement.innerText = `(${isActive ? "Active" : "Expired"})`;
+        rentalExpiryElement.classList.remove("text-success", "text-danger");
+        rentalExpiryElement.classList.add(isActive ? "text-success" : "text-danger");
     }
 
     console.log(`✅ Boat ${boatId} updated in UI.`);
 };
+
 
 OwnerApp.prototype.updateRentalEndStatus = function (boatId, rentalEndTimestamp) {
     const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
@@ -249,18 +258,34 @@ OwnerApp.prototype.startRentalStatusUpdate = function () {
             const boatId = boatElement.getAttribute("data-boat-id");
             const updatedBoat = await this.getBoat(boatId);
 
-            if (updatedBoat && updatedBoat[7] === 1) { 
+            if (updatedBoat && updatedBoat[7] === 1) { // Only check if rented
                 const currentTime = Math.floor(Date.now() / 1000);
                 const rentalEndTimestamp = updatedBoat[9];
 
                 if (rentalEndTimestamp <= currentTime) {
                     console.log(`⏳ Rental for Boat ID ${boatId} has expired! Updating UI...`);
-                    await this.updateRentalEndStatus(boatId, rentalEndTimestamp);
+
+                    // ✅ Update the "Rental Ends:" text and status dynamically
+                    const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
+                    const rentalExpiryElement = document.getElementById(`rental-expiry-${boatId}`);
+
+                    if (rentalStatusElement) {
+                        rentalStatusElement.innerText = new Date(rentalEndTimestamp * 1000).toLocaleString();
+                    }
+
+                    if (rentalExpiryElement) {
+                        rentalExpiryElement.innerText = "(Expired)";
+                        rentalExpiryElement.classList.remove("text-success");
+                        rentalExpiryElement.classList.add("text-danger");
+                    }
+
+                    await this.updateBoatStatusUI(boatId);
                 }
             }
         });
     }, 5000);
 };
+
 
 OwnerApp.prototype.updateRentalEndStatus = function (boatId, rentalEndTimestamp) {
     const rentalStatusElement = document.getElementById(`rental-status-${boatId}`);
@@ -527,37 +552,27 @@ OwnerApp.prototype.createBoatCard = function (boat) {
     const statusColor = statusColors[boat[7]];
     const rentalEndTimestamp = boat[9];
     const boatImageUrl = `https://ipfs.io/ipfs/${boat[10]}`;
-
-    const pricePerSecond = ethers.BigNumber.isBigNumber(boat[5]) 
-        ? ethers.utils.formatEther(boat[5].toString()) 
-        : ethers.utils.formatEther(boat[5]);
-
-    const depositAmount = ethers.BigNumber.isBigNumber(boat[6]) 
-        ? ethers.utils.formatEther(boat[6].toString()) 
-        : ethers.utils.formatEther(boat[6]);
-
+    const pricePerSecond = ethers.utils.formatEther(boat[5]);
+    const depositAmount = ethers.utils.formatEther(boat[6]);
     const boatId = boat[0];
     const currentTime = Math.floor(Date.now() / 1000);
-    const rentalDuration = rentalEndTimestamp > currentTime ? rentalEndTimestamp - currentTime : 0;
-    const rentalAmount = ethers.utils.formatEther(
-        ethers.BigNumber.from(boat[5]).mul(rentalDuration).toString()
-    );
+    const isActive = rentalEndTimestamp > currentTime;
 
     let rentalInfo = "";
     let collectButton = "";
 
     if (boatStatus === "Rented") {
-        const rentalExpired = currentTime >= rentalEndTimestamp;
-
         rentalInfo = `
-            <p class="fw-bold text-dark mb-0">Rental Ends:</p>
-            <p id="rental-status-${boatId}" class="fw-bold text-dark">
-                ${new Date(rentalEndTimestamp * 1000).toLocaleString()} 
-                ${rentalExpired ? '<span class="text-danger fw-bold">(Expired)</span>' : '<span class="text-success fw-bold">(Active)</span>'}
-            </p>
+            <div class="rental-info-group">
+                <p class="fw-bold text-dark mb-0">Rental Ends:</p>
+                <p id="rental-status-${boatId}" class="fw-bold text-dark mb-0">${new Date(rentalEndTimestamp * 1000).toLocaleString()}</p>
+                <span id="rental-expiry-${boatId}" class="fw-bold mt-1 text-${isActive ? "success" : "danger"}">
+                    (${isActive ? "Active" : "Expired"})
+                </span>
+            </div>
         `;
 
-        if (rentalExpired) {
+        if (!isActive) {
             collectButton = `
                 <div id="rentalControls-${boatId}" style="display: block;">
                     <select id="depositAction-${boatId}" class="form-select mb-2">
@@ -588,6 +603,7 @@ OwnerApp.prototype.createBoatCard = function (boat) {
         }
     }
 
+    // ✅ Preserve action buttons separately
     let actionButtons = "";
     if (boatStatus === "Available") {
         actionButtons = `
@@ -617,8 +633,8 @@ OwnerApp.prototype.createBoatCard = function (boat) {
                 <p><strong>Deposit:</strong> ${depositAmount} ETH</p>
                 <p class="boat-status"><span class="badge bg-${statusColor}">${boatStatus}</span></p>
                 ${rentalInfo}
-                <div class="d-grid gap-2">${collectButton}</div>    
-                <div class="d-grid gap-2">${actionButtons}</div>
+                <div class="d-grid gap-2">${collectButton}</div>
+                <div class="d-grid gap-2" id="action-buttons-${boatId}">${actionButtons}</div> 
             </div>
         </div>
     `;
