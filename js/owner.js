@@ -87,18 +87,53 @@ OwnerApp.prototype.listBoat = async function (event) {
     event.preventDefault();
     await this.app.waitForContractInit();
 
-    const listBoatForm = document.getElementById("listBoatForm");
-    const boatName = document.getElementById("boatName").value;
-    const description = document.getElementById("description").value;
-    const rentalPrice = ethers.utils.parseEther(document.getElementById("rentalPrice").value);
-    const depositAmount = ethers.utils.parseEther(document.getElementById("depositAmount").value);
-    const boatImageFile = document.getElementById("boatImage").files[0];
+    console.log("🚀 Checking form elements...");
 
-    if (!boatImageFile) {
-        alert("Please upload an image.");
+    const boatNameInput = document.getElementById("boatName");
+    const descriptionInput = document.getElementById("description");
+    const rentalPriceInput = document.getElementById("rentalPrice");
+    const depositAmountInput = document.getElementById("depositAmount");
+    const boatImageInput = document.getElementById("boatImage");
+
+    console.log("Boat Name Input:", boatNameInput);
+    console.log("Description Input:", descriptionInput);
+    console.log("Rental Price Input:", rentalPriceInput);
+    console.log("Deposit Amount Input:", depositAmountInput);
+    console.log("Boat Image Input:", boatImageInput);
+
+    if (!boatNameInput || !descriptionInput || !rentalPriceInput || !depositAmountInput || !boatImageInput) {
+        console.error("❌ One or more form elements are missing!");
+        alert("⚠️ Form error: Please check if all fields exist.");
         return;
     }
 
+    const boatName = boatNameInput.value.trim();
+    const description = descriptionInput.value.trim();
+    const rentalPrice = rentalPriceInput.value.trim();
+    const depositAmount = depositAmountInput.value.trim();
+    const boatImageFile = boatImageInput.files[0];
+
+    console.log("🚀 Form Values:");
+    console.log("Boat Name:", boatName);
+    console.log("Description:", description);
+    console.log("Rental Price:", rentalPrice);
+    console.log("Deposit Amount:", depositAmount);
+    console.log("Boat Image:", boatImageFile);
+
+    if (!boatName || !description || !rentalPrice || !depositAmount || !boatImageFile) {
+        alert("⚠️ Please fill in all fields and upload an image.");
+        return;
+    }
+
+    if (isNaN(rentalPrice) || isNaN(depositAmount) || Number(rentalPrice) <= 0 || Number(depositAmount) <= 0) {
+        alert("⚠️ Rental price and deposit amount must be valid numbers greater than zero.");
+        return;
+    }
+
+    const rentalPriceETH = ethers.utils.parseEther(rentalPrice);
+    const depositAmountETH = ethers.utils.parseEther(depositAmount);
+
+    const listBoatForm = document.getElementById("listBoatForm");
     const listBoatModalElement = document.getElementById("addBoatModal");
     const listBoatModal = bootstrap.Modal.getInstance(listBoatModalElement);
     if (listBoatModal) {
@@ -111,10 +146,11 @@ OwnerApp.prototype.listBoat = async function (event) {
 
     try {
         const imageIPFSHash = await uploadToIPFS(boatImageFile);
-        const contractWithSigner = this.app.contract.connect(this.app.web3Provider.getSigner());
-        const tx = await contractWithSigner.registerBoat("Owner", this.app.account, boatName, description, rentalPrice, depositAmount, imageIPFSHash);
-        await tx.wait();
         
+        const contractWithSigner = this.app.contract.connect(this.app.web3Provider.getSigner());
+        const tx = await contractWithSigner.registerBoat("Owner", this.app.account, boatName, description, rentalPriceETH, depositAmountETH, imageIPFSHash);
+        await tx.wait();
+
         this.app.showLoadingModal("success", "Boat listed successfully!");
 
         const boatCount = await contractWithSigner.boatCount();
@@ -286,13 +322,6 @@ OwnerApp.prototype.getBoat = async function (boatId) {
         return null;
     }
 };
-
-window.addEventListener("DOMContentLoaded", async () => {
-    await boatRentalApp.getAccounts();
-    ownerApp = new OwnerApp();
-    ownerApp.init();
-    ownerApp.startRentalStatusUpdate();
-});
 
 OwnerApp.prototype.toggleOtherReason = function (boatId) {
     const reasonDropdown = document.getElementById(`damageReason-${boatId}`);
@@ -519,7 +548,6 @@ OwnerApp.prototype.loadOwnerBoats = async function () {
             return;
         }
 
-        // ✅ Keep the existing row container (prevents full reload delay)
         if (!ownerBoatListings.querySelector(".row")) {
             ownerBoatListings.innerHTML = "<div class='row g-4'></div>";
         }
@@ -532,19 +560,15 @@ OwnerApp.prototype.loadOwnerBoats = async function () {
                 continue;
             }
 
-            // ✅ Check if boat card already exists
             let existingBoatCard = document.querySelector(`[data-boat-id="${boat[0]}"]`);
 
             if (existingBoatCard) {
-                // ✅ If boat already exists, only update its status instead of recreating the card
                 this.updateBoatStatusUI(boat[0]);
             } else {
-                // ✅ Create new boat card and append if not in UI
                 const boatCard = this.createBoatCard(boat);
                 boatRow.appendChild(boatCard);
             }
 
-            // ✅ Reattach deposit action event listener after updates
             const depositAction = document.getElementById(`depositAction-${boat[0]}`);
             if (depositAction) {
                 depositAction.addEventListener("change", () => this.showDamageReasonDropdown(boat[0]));

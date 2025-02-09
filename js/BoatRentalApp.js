@@ -3,7 +3,7 @@ class BoatRentalApp {
         this.web3Provider = null;
         this.contract = null;
         this.account = null;
-        this.contractAddress = "0x94a794743dd2b984a9961f02b6fd9ce20b012536"; // Ensure this is correct
+        this.contractAddress = "0x55bdd7e3326bfa1bd7cf51031e4ab1a9bee4aa2d"; // Ensure this is correct
         this.contractABI = [
             "function boatCount() public view returns (uint256)",
             "function getBoat(uint256) public view returns (uint256, string, address, string, string, uint256, uint256, uint8, address, uint256, string)",
@@ -47,7 +47,7 @@ class BoatRentalApp {
                 return;
             }
 
-            this.account = accounts[0]; // ✅ Store wallet address in class
+            this.account = accounts[0];
 
             const walletAddressElement = document.getElementById("walletAddress");
             if (walletAddressElement) {
@@ -56,7 +56,6 @@ class BoatRentalApp {
                 console.log("✅ Wallet connected:", this.account);
             }
 
-            // Ensure contract is initialized with signer
             this.contract = new ethers.Contract(this.contractAddress, this.contractABI, this.web3Provider.getSigner());
         } catch (error) {
             console.error("❌ Error fetching accounts:", error);
@@ -195,7 +194,6 @@ class BoatRentalApp {
     }    
 }
 
-// ✅ Ensure wallet is connected on page load
 const boatRentalApp = new BoatRentalApp();
 window.addEventListener("DOMContentLoaded", async () => {
     await boatRentalApp.init(true);
