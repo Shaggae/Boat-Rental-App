@@ -120,9 +120,10 @@ OwnerApp.prototype.listBoat = async function (event) {
         const boatCount = await contractWithSigner.boatCount();
         const newBoat = await contractWithSigner.getBoat(boatCount.toNumber());
 
-        this.addBoatToUI(newBoat);
-
-        this.updateDashboardStats();
+        document.getElementById("loadingCloseButton").addEventListener("click", function () {
+            ownerApp.addBoatToUI(newBoat);
+            ownerApp.updateDashboardStats();
+        }, { once: true });
 
     } catch (error) {
         console.error("❌ Error listing boat:", error);
@@ -376,9 +377,8 @@ OwnerApp.prototype.toggleBoatStatus = async function (boatId, setUnavailable) {
 
         document.getElementById("loadingCloseButton").addEventListener("click", function () {
             ownerApp.updateBoatStatusUI(boatId, setUnavailable);
+            ownerApp.updateDashboardStats();
         }, { once: true });
-
-        this.updateDashboardStats();
 
     } catch (error) {
         console.error("❌ Error updating boat status:", error);
@@ -407,6 +407,36 @@ OwnerApp.prototype.updateBoatStatusUI = async function (boatId) {
 
         if (boatStatus === 1 && isExpired) {
             this.showFinalizeRentalControls(boatId);
+        }
+
+        const statusBadge = boatElement.querySelector(".boat-status span");
+        if (statusBadge) {
+            statusBadge.classList.remove("bg-success", "bg-warning", "bg-secondary");
+            if (boatStatus === 0) {
+                statusBadge.classList.add("bg-success");
+                statusBadge.innerText = "Available";
+            } else if (boatStatus === 1) {
+                statusBadge.classList.add("bg-warning");
+                statusBadge.innerText = "Rented";
+            } else {
+                statusBadge.classList.add("bg-secondary");
+                statusBadge.innerText = "Unavailable";
+            }
+        }
+
+        const toggleButton = boatElement.querySelector(".toggle-status-btn");
+        if (toggleButton) {
+            if (boatStatus === 0) {
+                toggleButton.innerText = "Set to Unavailable";
+                toggleButton.classList.remove("btn-success");
+                toggleButton.classList.add("btn-warning");
+                toggleButton.setAttribute("onclick", `ownerApp.toggleBoatStatus(${boatId}, true)`);
+            } else if (boatStatus === 2) {
+                toggleButton.innerText = "Set to Available";
+                toggleButton.classList.remove("btn-warning");
+                toggleButton.classList.add("btn-success");
+                toggleButton.setAttribute("onclick", `ownerApp.toggleBoatStatus(${boatId}, false)`);
+            }
         }
 
         console.log(`✅ Boat ${boatId} checked. Expired: ${isExpired}`);
