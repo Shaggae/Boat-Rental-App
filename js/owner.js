@@ -509,7 +509,6 @@ OwnerApp.prototype.updateDashboardStats = async function () {
 OwnerApp.prototype.loadOwnerBoats = async function () {
     await this.app.waitForContractInit();
     const ownerBoatListings = document.getElementById("ownerBoatListings");
-    ownerBoatListings.innerHTML = "<p>Loading boats...</p>";
 
     try {
         const contractWithSigner = this.app.contract.connect(this.app.web3Provider.getSigner());
@@ -520,7 +519,10 @@ OwnerApp.prototype.loadOwnerBoats = async function () {
             return;
         }
 
-        ownerBoatListings.innerHTML = "<div class='row g-4'></div>";
+        // ✅ Keep the existing row container (prevents full reload delay)
+        if (!ownerBoatListings.querySelector(".row")) {
+            ownerBoatListings.innerHTML = "<div class='row g-4'></div>";
+        }
         const boatRow = ownerBoatListings.querySelector(".row");
 
         for (let i = 1; i <= boatCount.toNumber(); i++) {
@@ -530,9 +532,19 @@ OwnerApp.prototype.loadOwnerBoats = async function () {
                 continue;
             }
 
-            const boatCard = this.createBoatCard(boat);
-            boatRow.appendChild(boatCard);
+            // ✅ Check if boat card already exists
+            let existingBoatCard = document.querySelector(`[data-boat-id="${boat[0]}"]`);
 
+            if (existingBoatCard) {
+                // ✅ If boat already exists, only update its status instead of recreating the card
+                this.updateBoatStatusUI(boat[0]);
+            } else {
+                // ✅ Create new boat card and append if not in UI
+                const boatCard = this.createBoatCard(boat);
+                boatRow.appendChild(boatCard);
+            }
+
+            // ✅ Reattach deposit action event listener after updates
             const depositAction = document.getElementById(`depositAction-${boat[0]}`);
             if (depositAction) {
                 depositAction.addEventListener("change", () => this.showDamageReasonDropdown(boat[0]));
