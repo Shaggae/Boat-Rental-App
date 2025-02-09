@@ -9,7 +9,8 @@ BoatsApp.prototype.init = async function () {
 
 BoatsApp.prototype.loadBoats = async function () {
     console.log("📡 Fetching boats...");
-    document.getElementById("boatListings").innerHTML = "<p>Loading boats...</p>";
+    const boatListingsContainer = document.getElementById("boatListings");
+    boatListingsContainer.innerHTML = "<p>Loading boats...</p>";
 
     try {
         let boatCount = await this.app.contract.boatCount();
@@ -20,7 +21,8 @@ BoatsApp.prototype.loadBoats = async function () {
             return;
         }
 
-        document.getElementById("boatListings").innerHTML = "<div class='row row-cols-1 row-cols-md-4 g-4'>";
+        boatListingsContainer.innerHTML = "<div class='row g-4'></div>";
+        const boatRow = boatListingsContainer.querySelector(".row");
 
         const statusMap = ["Available", "Rented"];
         const statusBadgeMap = {
@@ -45,30 +47,33 @@ BoatsApp.prototype.loadBoats = async function () {
                 <button class="btn btn-primary w-100" onclick="window.location.href='login.html'">Rent</button>
             `;
 
-            const listing = `
-                <div class="col-md-3">
-                    <div class="card shadow-lg h-100">
-                        <img src="${boatImageUrl}" class="card-img-top" alt="Boat Image" onerror="this.onerror=null; this.src='fallback-image.jpg';">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">${boat[3]}</h5>
-                            <p class="card-text text-muted">${boat[4]}</p>
-                            <p><strong>Price:</strong> ${pricePerSecond} ETH/sec</p>
-                            <p><strong>Deposit:</strong> ${depositAmount} ETH</p>
-                            <p><strong>Owner:</strong> ${boat[2].substring(0, 6)}...${boat[2].slice(-4)}</p>
-                            <p>${statusBadgeMap[boatStatus]}</p>
-                            ${rentSection}
-                        </div>
+            const boatCard = document.createElement("div");
+            boatCard.classList.add("col-lg-4", "col-md-6", "col-sm-12");
+            boatCard.setAttribute("data-boat-id", boat[0]);
+
+            boatCard.innerHTML = `
+                <div class="card boat-card shadow-lg h-100 d-flex flex-column">
+                    <img src="${boatImageUrl}" class="card-img-top boat-image"
+                        alt="Boat Image"
+                        onerror="this.onerror=null; this.src='fallback-image.jpg';">
+                    <div class="card-body text-center d-flex flex-column justify-content-between">
+                        <h5 class="card-title">${boat[3]}</h5>
+                        <p class="card-text boat-description">${boat[4]}</p>
+                        <p><strong>Price:</strong> ${pricePerSecond} ETH/sec</p>
+                        <p><strong>Deposit:</strong> ${depositAmount} ETH</p>
+                        <p><strong>Owner:</strong> ${boat[2].substring(0, 6)}...${boat[2].slice(-4)}</p>
+                        <p class="boat-status">${statusBadgeMap[boatStatus]}</p>
+                        <div class="d-grid gap-2">${rentSection}</div>
                     </div>
                 </div>
             `;
-            document.getElementById("boatListings").innerHTML += listing;
-        }
 
-        document.getElementById("boatListings").innerHTML += "</div>";
+            boatRow.appendChild(boatCard);
+        }
 
     } catch (error) {
         console.error("❌ Error fetching boats:", error);
-        document.getElementById("boatListings").innerHTML = "<p>Failed to load boats.</p>";
+        boatListingsContainer.innerHTML = "<p>Failed to load boats.</p>";
     }
 };
 
